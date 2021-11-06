@@ -1,29 +1,55 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"product-api/main/handlers"
+	"time"
 )
 
 func main() {
 
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("Hello World")
-		d, error := ioutil.ReadAll(r.Body)
-		if error != nil {
-			http.Error(rw, "unable to read request body", http.StatusBadRequest)
-			return
+	l := log.New(os.Stdout, "product-api", log.LstdFlags)
+
+	hh := handlers.NewHello(l)
+	gh := handlers.NewGoodBye(l)
+	ph := handlers.NewProducts(l)
+
+	//Create a new http Server Multiplexer
+	sm := http.NewServeMux()
+
+	sm.Handle("/", hh)
+	sm.Handle("/goodbye", gh)
+	sm.Handle("/products", ph)
+
+	// http.ListenAndServe(":9090", sm)
+	s := &http.Server{
+		Addr:         ":9090",
+		Handler:      sm,
+		ReadTimeout:  1 * time.Second,
+		WriteTimeout: 1 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+	// non blocking
+	go func() {
+		err := s.ListenAndServe()
+		if err != nil {
+			l.Fatal(err)
 		}
-		log.Printf("Data: %s\n", d)
-		fmt.Fprintf(rw, "Hello %s", d)
-	})
+	}()
+	// Create a channel for signals
+	sigChan := make(chan os.Signal)
+	//  send the following signals to the channel when seen
+	signal.Notify(sigChan, os.Interrupt)
+	signal.Notify(sigChan, os.Kill)
 
-	http.HandleFunc("/goodbye", func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("GoodBye World")
-	})
+	sig := <-sigChan
+	l.Println("Recieved terminate, gracefull shutdown", sig)
 
-	http.ListenAndServe(":9090", nil)
+	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	s.Shutdown(tc)
 
 }
