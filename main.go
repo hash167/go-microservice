@@ -8,7 +8,11 @@ import (
 	"os/signal"
 	"product-api/main/handlers"
 	"time"
+
+	"github.com/gobuffalo/envy"
 )
+
+var bindAddress = envy.Get("BIND_ADDRESS", ":9090")
 
 func main() {
 
@@ -24,10 +28,11 @@ func main() {
 	sm.Handle("/", hh)
 	sm.Handle("/goodbye", gh)
 	sm.Handle("/products", ph)
+	sm.Handle("/products/", ph)
 
 	// http.ListenAndServe(":9090", sm)
 	s := &http.Server{
-		Addr:         ":9090",
+		Addr:         bindAddress, //":9090"
 		Handler:      sm,
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
