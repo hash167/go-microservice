@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/envy"
+	"github.com/gorilla/mux"
 )
 
 var bindAddress = envy.Get("BIND_ADDRESS", ":9090")
@@ -18,17 +19,27 @@ func main() {
 
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
 
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodBye(l)
+	//Using gorilla mux
+
+	sm := mux.NewRouter()
+
 	ph := handlers.NewProducts(l)
 
-	//Create a new http Server Multiplexer
-	sm := http.NewServeMux()
+	// register handler with the mux for GET requests
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/products", ph.GetProducts)
 
-	sm.Handle("/", hh)
-	sm.Handle("/goodbye", gh)
-	sm.Handle("/products", ph)
-	sm.Handle("/products/", ph)
+	//Post requests
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/products", ph.AddProduct)
+	postRouter.Use(ph.MiddlewareValidateProduct)
+
+	//Put requests
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/products/{id:[0-9]+}", ph.UpdateProduct)
+	putRouter.Use(ph.MiddlewareValidateProduct)
 
 	// http.ListenAndServe(":9090", sm)
 	s := &http.Server{
