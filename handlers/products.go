@@ -34,10 +34,9 @@ func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle POST request")
 	// Get product from context through middleware
-	prod := r.Context().Value(KeyProduct{}).(data.Product)
+	prod := r.Context().Value(KeyProduct{}).(*data.Product)
 
-	data.AddProduct(&prod)
-
+	data.AddProduct(prod)
 }
 
 func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
@@ -47,9 +46,9 @@ func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(rw, "Product not found", http.StatusNotFound)
 	}
-	prod := r.Context().Value(KeyProduct{}).(data.Product)
+	prod := r.Context().Value(KeyProduct{}).(*data.Product)
 
-	err = data.UpdateProduct(id, &prod)
+	err = data.UpdateProduct(id, prod)
 	if err == data.ErrProductNotFound {
 		http.Error(rw, "Product not found", http.StatusInternalServerError)
 	}
@@ -63,7 +62,7 @@ type KeyProduct struct{}
 
 func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		prod := data.Product{}
+		prod := &data.Product{}
 		err := prod.FromJSON(r.Body)
 		if err != nil {
 			p.l.Println("[ERROR] deserializing product", err)
