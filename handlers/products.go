@@ -24,10 +24,31 @@ func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	lp := data.GetProducts()
 
 	// Serialize list to JSON
-	err := lp.ToJSON(rw)
+	err := data.ToJSON(lp, rw)
 
 	if err != nil {
 		http.Error(rw, "Unable to martial json", http.StatusInternalServerError)
+	}
+}
+
+func (p *Products) GetProduct(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	product_id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(rw, "Product not found", http.StatusNotFound)
+	}
+	p.l.Println("Get product with id %s", product_id)
+	product, err := data.GetProductById(product_id)
+	if err != nil {
+		p.l.Println("[ERROR] fetching product", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+		data.ToJSON(&data.GenericError{Message: err.Error()}, rw)
+	}
+	err_ := data.ToJSON(product, rw)
+	if err_ != nil {
+		// we should never be here but log the error just incase
+		p.l.Println("[ERROR] serializing product", err)
 	}
 }
 
@@ -58,12 +79,41 @@ func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (p *Products) DeleteProduct(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(rw, "Product not found", http.StatusNotFound)
+	}
+
+	p.l.Println("[DEBUG] deleting record id", id)
+	p.l.Println("Handle DELETE request")
+	err_ := data.DeleteProduct(id)
+	if err_ == data.ErrProductNotFound {
+		p.l.Println("[ERROR] deleting record id does not exist")
+
+		rw.WriteHeader(http.StatusNotFound)
+		data.ToJSON(&data.GenericError{Message: err.Error()}, rw)
+		return
+	}
+
+	if err_ != nil {
+		p.l.Println("[ERROR] deleting record", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+		data.ToJSON(&data.GenericError{Message: err.Error()}, rw)
+		return
+	}
+
+	rw.WriteHeader(http.StatusNoContent)
+}
+
 type KeyProduct struct{}
 
 func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		prod := &data.Product{}
-		err := prod.FromJSON(r.Body)
+		err := data.FromJSON(prod, r.Body)
 		if err != nil {
 			p.l.Println("[ERROR] deserializing product", err)
 			http.Error(rw, "Error reading product", http.StatusBadRequest)

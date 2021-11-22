@@ -28,7 +28,7 @@ func main() {
 	// register handler with the mux for GET requests
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/products", ph.GetProducts)
-
+	getRouter.HandleFunc("/products/{id:[0-9]+}", ph.GetProduct)
 	//Post requests
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
@@ -40,6 +40,11 @@ func main() {
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
 	putRouter.HandleFunc("/products/{id:[0-9]+}", ph.UpdateProduct)
 	putRouter.Use(ph.MiddlewareValidateProduct)
+
+	// Delete Requests
+
+	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
+	deleteRouter.HandleFunc("/products/{id:[0-9]+}", ph.DeleteProduct)
 
 	// http.ListenAndServe(":9090", sm)
 	s := &http.Server{

@@ -4,11 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"time"
-
-	"github.com/go-playground/validator/v10"
 )
+
+// ErrInvalidProductPath is an error message when the product path is not valid
+var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
+
+// GenericError is a generic error message returned by a server
+type GenericError struct {
+	Message string `json:"message"`
+}
 
 type Product struct {
 	ID          int     `json:"id"`
@@ -23,35 +28,26 @@ type Product struct {
 
 type Products []*Product
 
-func (p *Product) Validate() error {
-	validate := validator.New()
-	validate.RegisterValidation("sku", p.ValidateSKU)
-	return validate.Struct(p)
-
-}
-func (p *Product) ValidateSKU(fl validator.FieldLevel) bool {
-	r := regexp.MustCompile(`[a-z]+-[a-z]+-[a-z]+`)
-	matches := r.FindAllString(fl.Field().String(), -1)
-	if len(matches) != 1 {
-		return false
-	}
-	return true
-}
-
 // Method on type Product and not Products
-func (p *Product) FromJSON(r io.Reader) error {
+func FromJSON(i interface{}, r io.Reader) error {
 	d := json.NewDecoder(r)
-	e := d.Decode(p)
+	e := d.Decode(i)
 	return e
 }
 
-func (p *Products) ToJSON(w io.Writer) error {
+func ToJSON(i interface{}, w io.Writer) error {
 	e := json.NewEncoder(w)
-	return e.Encode(p)
+	return e.Encode(i)
 }
 
 func GetProducts() Products {
 	return productList
+}
+
+func GetProductById(id int) (Product, error) {
+	p, _, err := findProduct(id)
+	return *p, err
+
 }
 
 func AddProduct(p *Product) {
@@ -69,6 +65,18 @@ func UpdateProduct(id int, p *Product) error {
 	return nil
 }
 
+// DeleteProduct deletes a product from the database
+func DeleteProduct(id int) error {
+	_, i, _ := findProduct(id)
+	if i == -1 {
+		return ErrProductNotFound
+	}
+
+	productList = append(productList[:i], productList[i+1])
+
+	return nil
+}
+
 // Explicit error
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
@@ -78,7 +86,7 @@ func findProduct(id int) (*Product, int, error) {
 			return p, i, nil
 		}
 	}
-	return nil, id, ErrProductNotFound
+	return nil, -1, ErrProductNotFound
 }
 
 func getProductID() int {
