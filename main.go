@@ -9,6 +9,7 @@ import (
 	"product-api/main/handlers"
 	"time"
 
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gobuffalo/envy"
 	"github.com/gorilla/mux"
 )
@@ -29,8 +30,15 @@ func main() {
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/products", ph.GetProducts)
 	getRouter.HandleFunc("/products/{id:[0-9]+}", ph.GetProduct)
-	//Post requests
 
+	// register middleware for docs
+
+	opts := middleware.RedocOpts{SpecURL: "./swagger.yaml"}
+	sh := middleware.Redoc(opts, nil)
+	getRouter.Handle("/docs", sh)
+	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
+
+	//Post requests
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/products", ph.AddProduct)
 	postRouter.Use(ph.MiddlewareValidateProduct)

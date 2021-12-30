@@ -18,6 +18,10 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
+// swagger:route GET /products products listProducts
+// Return a list of products from the database
+// responses:
+//	200: productsResponse
 func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle GET Products")
 
@@ -31,6 +35,13 @@ func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route GET /products/{id} products listSingle
+// Return a list of products from the database
+// responses:
+//	200: productResponse
+//	404: errorResponse
+
+// ListSingle handles GET requests
 func (p *Products) GetProduct(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id, err := strconv.Atoi(vars["id"])
@@ -52,6 +63,15 @@ func (p *Products) GetProduct(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route POST /products products createProduct
+// Create a new product
+//
+// responses:
+//	200: productResponse
+//  422: errorValidation
+//  501: errorResponse
+
+// Create handles POST requests to add new products
 func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle POST request")
 	// Get product from context through middleware
@@ -60,6 +80,15 @@ func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	data.AddProduct(prod)
 }
 
+// swagger:route PUT /products products updateProduct
+// Update a products details
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  422: errorValidation
+
+// Update handles PUT requests to update products
 func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle PUT request")
 	vars := mux.Vars(r)
@@ -79,6 +108,15 @@ func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route DELETE /products/{id} products deleteProduct
+// Update a products details
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  501: errorResponse
+
+// Delete handles DELETE requests and removes items from the database
 func (p *Products) DeleteProduct(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
@@ -108,6 +146,7 @@ func (p *Products) DeleteProduct(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusNoContent)
 }
 
+// KeyProduct is the key used in the context to store the product object
 type KeyProduct struct{}
 
 func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
