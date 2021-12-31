@@ -13,3 +13,6 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+.DS_Store
+product-images/image-store/*
+product-images/image-store/1/test.png

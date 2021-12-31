@@ -39,7 +39,9 @@ func (f *Files) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	fn := vars["filename"]
-
+	if id == "" || fn == "" {
+		f.invalidURI(r.URL.String(), rw)
+	}
 	f.log.Info("Handle POST", "id", id, "filename", fn)
 	f.saveFile(id, fn, rw, r)
 }
