@@ -9,6 +9,7 @@ require (
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/gobuffalo/envy v1.10.1
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/stretchr/testify v1.7.0
 )
@@ -18,6 +19,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-openapi/analysis v0.21.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect

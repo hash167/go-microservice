@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gobuffalo/envy"
+	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -58,10 +59,14 @@ func main() {
 	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
 	deleteRouter.HandleFunc("/products/{id:[0-9]+}", ph.DeleteProduct)
 
+	// CORS
+
+	ch := ghandlers.CORS(ghandlers.AllowedOrigins([]string{"http://localhost:3000"}))
+
 	// http.ListenAndServe(":9090", sm)
 	s := &http.Server{
 		Addr:         bindAddress, //":9090"
-		Handler:      sm,
+		Handler:      ch(sm),
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 		IdleTimeout:  30 * time.Second,
