@@ -23,8 +23,7 @@ func NewProducts(l *log.Logger) *Products {
 // responses:
 //	200: productsResponse
 func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
-	p.l.Println("Handle GET Products")
-
+	p.l.Println("[INFO]: Handle GET Products")
 	lp := data.GetProducts()
 
 	// Serialize list to JSON
@@ -35,13 +34,13 @@ func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// swagger:route GET /products/{id} products listSingle
+// swagger:route GET /products/{id} products listSingleProduct
 // Return a list of products from the database
 // responses:
 //	200: productResponse
 //	404: errorResponse
 
-// ListSingle handles GET requests
+// GetProduct handles GET requests
 func (p *Products) GetProduct(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id, err := strconv.Atoi(vars["id"])
@@ -71,7 +70,7 @@ func (p *Products) GetProduct(rw http.ResponseWriter, r *http.Request) {
 //  422: errorValidation
 //  501: errorResponse
 
-// Create handles POST requests to add new products
+// AddProduct handles POST requests to add new products
 func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle POST request")
 	// Get product from context through middleware
@@ -163,6 +162,15 @@ func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 
 		// Call the next handler
+		next.ServeHTTP(rw, r)
+	})
+}
+
+// Middleware for setting the response header
+
+func ResponseHeaderMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Add("Content-Type", "application/json")
 		next.ServeHTTP(rw, r)
 	})
 }

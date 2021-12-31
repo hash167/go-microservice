@@ -38,6 +38,10 @@ func main() {
 	getRouter.Handle("/docs", sh)
 	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
 
+	// add response header middleware
+
+	getRouter.Use(handlers.ResponseHeaderMiddleware)
+
 	//Post requests
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/products", ph.AddProduct)
