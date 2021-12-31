@@ -7,10 +7,10 @@ import (
 	"os/signal"
 	"time"
 
+	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/hash167/go-microservices/product-images/handlers"
-
 	"github.com/hash167/go-microservices/product-images/files"
+	"github.com/hash167/go-microservices/product-images/handlers"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 )
@@ -42,10 +42,13 @@ func main() {
 	// Create the handlers
 	fh := handlers.NewFiles(stor, l)
 
-	// Create and new serve mux and register the handlers
+	// Create new serve mux and register the handlers
 	sm := mux.NewRouter()
+	ch := ghandlers.CORS(ghandlers.AllowedOrigins([]string{"*"}))
+	// upload files
 	ph := sm.Methods(http.MethodPost).Subrouter()
-	ph.HandleFunc("/images/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh.ServeHTTP)
+	ph.HandleFunc("/images/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh.UploadREST)
+	ph.HandleFunc("/", fh.UploadMultipart)
 
 	// get files
 	gh := sm.Methods(http.MethodGet).Subrouter()
@@ -56,7 +59,7 @@ func main() {
 	// create a new server
 	s := http.Server{
 		Addr:         *bindAddress,      // configure the bind address
-		Handler:      sm,                // set the default handler
+		Handler:      ch(sm),            // set the default handler
 		ErrorLog:     sl,                // the logger for the server
 		ReadTimeout:  5 * time.Second,   // max time to read request from the client
 		WriteTimeout: 10 * time.Second,  // max time to write response to the client
