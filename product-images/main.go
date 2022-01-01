@@ -41,7 +41,7 @@ func main() {
 	}
 	// Create the handlers
 	fh := handlers.NewFiles(stor, l)
-
+	mw := handlers.GzipMiddleware
 	// Create new serve mux and register the handlers
 	sm := mux.NewRouter()
 	ch := ghandlers.CORS(ghandlers.AllowedOrigins([]string{"*"}))
@@ -56,6 +56,8 @@ func main() {
 		"/images/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}",
 		http.StripPrefix("/images/", http.FileServer(http.Dir(*basePath))),
 	)
+	// Use the Gzip encoding middleware
+	gh.Use(mw)
 	// create a new server
 	s := http.Server{
 		Addr:         *bindAddress,      // configure the bind address
